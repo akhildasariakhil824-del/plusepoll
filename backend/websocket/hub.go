@@ -12,8 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var upgrader = websocket.Upgrader{
@@ -25,20 +23,15 @@ var upgrader = websocket.Upgrader{
 }
 
 // HandleWebSocket upgrades HTTP to WS and streams live poll updates from Redis Pub/Sub
-func HandleWebSocket(c *gin.Context, mongo *database.MongoDB, redis *database.RedisService) {
+func HandleWebSocket(c *gin.Context, store database.DataStore, redis *database.RedisService) {
 	pollIDHex := c.Param("id")
-	pollID, err := primitive.ObjectIDFromHex(pollIDHex)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid poll ID"})
-		return
-	}
 
-	// 1. Verify poll exists in MongoDB
+	// 1. Verify poll exists in store
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var poll models.Poll
-	if err := mongo.Polls.FindOne(ctx, bson.M{"_id": pollID}).Decode(&poll); err != nil {
+	poll, err := store.GetPollByID(ctx, pollIDHex)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found"})
 		return
 	}

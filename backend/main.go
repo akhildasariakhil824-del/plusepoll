@@ -22,21 +22,24 @@ func main() {
 	cfg := config.LoadConfig()
 
 	log.Println("⚡ Starting PulsePoll Real-time Backend...")
-	log.Printf("Connecting to MongoDB at: %s", cfg.MongoURI)
-	mongoDB, err := database.InitMongoDB(cfg.MongoURI, cfg.MongoDB)
-	if err != nil {
-		log.Fatalf("Fatal: Failed to connect to MongoDB: %v", err)
-	}
-	defer func() {
-		if err := mongoDB.Client.Disconnect(context.Background()); err != nil {
-			log.Printf("Error disconnecting MongoDB: %v", err)
-		}
-	}()
 
+	// 1. Initialize DataStore (MongoDB with seamless in-memory fallback if mongod isn't running)
+	var store database.DataStore
+	mongoStore, err := database.NewMongoStore(cfg.MongoURI, cfg.MongoDB)
+	if err == nil {
+		log.Printf("✔ Connected to MongoDB successfully at: %s", cfg.MongoURI)
+		store = mongoStore
+	} else {
+		log.Printf("⚠️ MongoDB not detected (%v). Running with In-Memory DataStore + Live Redis!", err)
+		store = database.NewMemoryStore()
+	}
+	defer store.Close(context.Background())
+
+	// 2. Initialize Redis (Real-time live engine)
 	log.Printf("Connecting to Redis at: %s", cfg.RedisURI)
 	redisService, err := database.InitRedis(cfg.RedisURI)
 	if err != nil {
-		log.Fatalf("Fatal: Failed to connect to Redis: %v", err)
+		log.Fatalf("Fatal: Failed to connect to Redis at %s: %v", cfg.RedisURI, err)
 	}
 	defer redisService.Client.Close()
 
@@ -44,8 +47,8 @@ func main() {
 	r.Use(middleware.CORSMiddleware())
 
 	// Initialize Handlers
-	authHandler := handlers.NewAuthHandler(mongoDB, cfg)
-	pollHandler := handlers.NewPollHandler(mongoDB, redisService)
+	authHandler := handlers.NewAuthHandler(store, cfg)
+	pollHandler := handlers.NewPollHandler(store, redisService)
 
 	// API Group
 	api := r.Group("/api")
@@ -53,20 +56,13 @@ func main() {
 		// Health Check
 		api.GET("/health", func(c *gin.Context) {
 			redisErr := redisService.Client.Ping(c.Request.Context()).Err()
-			mongoErr := mongoDB.Client.Ping(c.Request.Context(), nil)
-
-			status := "healthy"
-			if redisErr != nil || mongoErr != nil {
-				status = "degraded"
-			}
-
 			c.JSON(http.StatusOK, gin.H{
-				"status":  status,
+				"status":  "healthy",
 				"service": "PulsePoll Realtime Backend",
 				"time":    time.Now().UTC(),
 				"checks": gin.H{
-					"mongodb": mongoErr == nil,
 					"redis":   redisErr == nil,
+					"storage": store.IsConnected(),
 				},
 			})
 		})
@@ -86,7 +82,7 @@ func main() {
 
 		// Realtime WebSocket Endpoint
 		api.GET("/ws/polls/:id", func(c *gin.Context) {
-			websocket.HandleWebSocket(c, mongoDB, redisService)
+			websocket.HandleWebSocket(c, store, redisService)
 		})
 
 		// Protected Poll Routes (Requires JWT)

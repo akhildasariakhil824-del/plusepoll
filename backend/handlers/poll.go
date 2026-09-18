@@ -14,20 +14,17 @@ import (
 	"pulsepoll-backend/models"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type PollHandler struct {
-	mongo *database.MongoDB
+	store database.DataStore
 	redis *database.RedisService
 }
 
-func NewPollHandler(mongo *database.MongoDB, redis *database.RedisService) *PollHandler {
+func NewPollHandler(store database.DataStore, redis *database.RedisService) *PollHandler {
 	return &PollHandler{
-		mongo: mongo,
+		store: store,
 		redis: redis,
 	}
 }
@@ -91,8 +88,8 @@ func (h *PollHandler) CreatePoll(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	// 1. Save to MongoDB
-	_, err = h.mongo.Polls.InsertOne(ctx, poll)
+	// 1. Save to Database Store (Mongo or MemoryStore fallback)
+	err = h.store.CreatePoll(ctx, &poll)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to persist poll in database"})
 		return
@@ -109,26 +106,13 @@ func (h *PollHandler) CreatePoll(c *gin.Context) {
 // ListMyPolls retrieves all polls created by the authenticated user
 func (h *PollHandler) ListMyPolls(c *gin.Context) {
 	userIDHex, _ := c.Get("userID")
-	creatorID, err := primitive.ObjectIDFromHex(userIDHex.(string))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid creator ID"})
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	findOpts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
-	cursor, err := h.mongo.Polls.Find(ctx, bson.M{"creator_id": creatorID}, findOpts)
+	polls, err := h.store.GetPollsByCreator(ctx, userIDHex.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query polls"})
-		return
-	}
-	defer cursor.Close(ctx)
-
-	var polls []models.Poll
-	if err := cursor.All(ctx, &polls); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode polls"})
 		return
 	}
 
@@ -161,22 +145,13 @@ func (h *PollHandler) ListMyPolls(c *gin.Context) {
 // GetPoll retrieves single poll with real-time tally merged from Redis
 func (h *PollHandler) GetPoll(c *gin.Context) {
 	idHex := c.Param("id")
-	pollID, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid poll ID format"})
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	var poll models.Poll
-	if err := h.mongo.Polls.FindOne(ctx, bson.M{"_id": pollID}).Decode(&poll); err != nil {
-		if err == mongo.ErrNoDocuments {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch poll"})
+	poll, err := h.store.GetPollByID(ctx, idHex)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found"})
 		return
 	}
 
@@ -208,11 +183,6 @@ func (h *PollHandler) GetPoll(c *gin.Context) {
 // SubmitVote handles casting a vote with atomic Redis counter & deduplication
 func (h *PollHandler) SubmitVote(c *gin.Context) {
 	idHex := c.Param("id")
-	pollID, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid poll ID format"})
-		return
-	}
 
 	var req models.VoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -229,9 +199,9 @@ func (h *PollHandler) SubmitVote(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	// 1. Fetch Poll from MongoDB to check active status & option boundaries
-	var poll models.Poll
-	if err := h.mongo.Polls.FindOne(ctx, bson.M{"_id": pollID}).Decode(&poll); err != nil {
+	// 1. Fetch Poll from store to check active status & option boundaries
+	poll, err := h.store.GetPollByID(ctx, idHex)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found"})
 		return
 	}
@@ -300,12 +270,11 @@ func (h *PollHandler) SubmitVote(c *gin.Context) {
 		log.Printf("Warning: Redis publish failed for poll %s: %v", idHex, err)
 	}
 
-	// 7. Persist to MongoDB (Async background write for zero-latency voter response)
-	go func(pID primitive.ObjectID, optIdx int, vID, clientIP, userAgent string, totVotes int64) {
+	// 7. Persist to DataStore (Async background write for zero-latency voter response)
+	go func(pIDHex string, pID primitive.ObjectID, optIdx int, vID, clientIP, userAgent string) {
 		bgCtx, bgCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer bgCancel()
 
-		// Write permanent audit log
 		voteRecord := models.VoteRecord{
 			ID:          primitive.NewObjectID(),
 			PollID:      pID,
@@ -315,22 +284,9 @@ func (h *PollHandler) SubmitVote(c *gin.Context) {
 			UserAgent:   userAgent,
 			VotedAt:     time.Now(),
 		}
-		if _, err := h.mongo.Votes.InsertOne(bgCtx, voteRecord); err != nil {
-			log.Printf("Error saving vote audit record to MongoDB: %v", err)
-		}
-
-		// Update total votes in MongoDB Poll document
-		filter := bson.M{"_id": pID}
-		update := bson.M{
-			"$inc": bson.M{
-				fmt.Sprintf("options.%d.votes", optIdx): 1,
-				"total_votes":                          1,
-			},
-		}
-		if _, err := h.mongo.Polls.UpdateOne(bgCtx, filter, update); err != nil {
-			log.Printf("Error incrementing MongoDB poll totals: %v", err)
-		}
-	}(pollID, req.OptionIndex, req.VoterID, c.ClientIP(), c.Request.UserAgent(), totalVotes)
+		_ = h.store.RecordVote(bgCtx, &voteRecord)
+		_ = h.store.IncrementPollVotes(bgCtx, pIDHex, optIdx)
+	}(idHex, poll.ID, req.OptionIndex, req.VoterID, c.ClientIP(), c.Request.UserAgent())
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Vote recorded successfully",
@@ -343,32 +299,24 @@ func (h *PollHandler) SubmitVote(c *gin.Context) {
 // TogglePollStatus opens or closes a poll (creator only)
 func (h *PollHandler) TogglePollStatus(c *gin.Context) {
 	idHex := c.Param("id")
-	pollID, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid poll ID"})
-		return
-	}
-
 	userIDHex, _ := c.Get("userID")
-	creatorID, _ := primitive.ObjectIDFromHex(userIDHex.(string))
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	var poll models.Poll
-	if err := h.mongo.Polls.FindOne(ctx, bson.M{"_id": pollID, "creator_id": creatorID}).Decode(&poll); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found or you do not have permission to manage it"})
+	poll, err := h.store.GetPollByID(ctx, idHex)
+	if err != nil || poll.CreatorID.Hex() != userIDHex.(string) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found or unauthorized"})
 		return
 	}
 
 	newStatus := !poll.IsActive
-	_, err = h.mongo.Polls.UpdateOne(ctx, bson.M{"_id": pollID}, bson.M{"$set": bson.M{"is_active": newStatus}})
+	err = h.store.UpdatePollStatus(ctx, idHex, userIDHex.(string), newStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update poll status"})
 		return
 	}
 
-	// Broadcast status change via Redis Pub/Sub
 	votesMap, totalVotes, _ := h.redis.GetVotes(ctx, idHex, len(poll.Options))
 	viewers, _ := h.redis.GetViewers(ctx, idHex)
 
@@ -393,26 +341,16 @@ func (h *PollHandler) TogglePollStatus(c *gin.Context) {
 // DeletePoll removes poll (creator only)
 func (h *PollHandler) DeletePoll(c *gin.Context) {
 	idHex := c.Param("id")
-	pollID, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid poll ID"})
-		return
-	}
-
 	userIDHex, _ := c.Get("userID")
-	creatorID, _ := primitive.ObjectIDFromHex(userIDHex.(string))
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := h.mongo.Polls.DeleteOne(ctx, bson.M{"_id": pollID, "creator_id": creatorID})
-	if err != nil || res.DeletedCount == 0 {
+	err := h.store.DeletePoll(ctx, idHex, userIDHex.(string))
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found or unauthorized"})
 		return
 	}
-
-	// Clean up votes collection as well
-	_, _ = h.mongo.Votes.DeleteMany(ctx, bson.M{"poll_id": pollID})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Poll successfully deleted"})
 }
@@ -420,30 +358,17 @@ func (h *PollHandler) DeletePoll(c *gin.Context) {
 // ExportPollResults exports votes history as CSV for analytics
 func (h *PollHandler) ExportPollResults(c *gin.Context) {
 	idHex := c.Param("id")
-	pollID, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid poll ID"})
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	var poll models.Poll
-	if err := h.mongo.Polls.FindOne(ctx, bson.M{"_id": pollID}).Decode(&poll); err != nil {
+	poll, err := h.store.GetPollByID(ctx, idHex)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Poll not found"})
 		return
 	}
 
-	cursor, err := h.mongo.Votes.Find(ctx, bson.M{"poll_id": pollID})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch audit votes"})
-		return
-	}
-	defer cursor.Close(ctx)
-
-	var votes []models.VoteRecord
-	_ = cursor.All(ctx, &votes)
+	votes, _ := h.store.GetVotesByPoll(ctx, idHex)
 
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=poll-%s-results.csv", idHex))
 	c.Header("Content-Type", "text/csv")

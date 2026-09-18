@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -12,34 +13,32 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
-	mongo  *database.MongoDB
+	store  database.DataStore
 	config *config.Config
 }
 
-func NewAuthHandler(mongo *database.MongoDB, cfg *config.Config) *AuthHandler {
+func NewAuthHandler(store database.DataStore, cfg *config.Config) *AuthHandler {
 	h := &AuthHandler{
-		mongo:  mongo,
+		store:  store,
 		config: cfg,
 	}
 	h.SeedDemoUser()
 	return h
 }
 
-// SeedDemoUser ensures the demo account exists in MongoDB for instant testing
+// SeedDemoUser ensures the demo account exists for instant testing
 func (h *AuthHandler) SeedDemoUser() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	demoEmail := "demo@pulsepoll.io"
-	count, err := h.mongo.Users.CountDocuments(ctx, bson.M{"email": demoEmail})
-	if err == nil && count == 0 {
+	exists, err := h.store.EmailExists(ctx, demoEmail)
+	if err == nil && !exists {
 		hashed, err := bcrypt.GenerateFromPassword([]byte("demopass123"), bcrypt.DefaultCost)
 		if err == nil {
 			demoUser := models.User{
@@ -49,7 +48,8 @@ func (h *AuthHandler) SeedDemoUser() {
 				Password:  string(hashed),
 				CreatedAt: time.Now(),
 			}
-			_, _ = h.mongo.Users.InsertOne(ctx, demoUser)
+			_ = h.store.CreateUser(ctx, &demoUser)
+			log.Println("✔ Seeded demo user account (demo@pulsepoll.io / demopass123)")
 		}
 	}
 }
@@ -89,12 +89,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	defer cancel()
 
 	// Check if email already exists
-	count, err := h.mongo.Users.CountDocuments(ctx, bson.M{"email": req.Email})
+	exists, err := h.store.EmailExists(ctx, req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check email availability"})
 		return
 	}
-	if count > 0 {
+	if exists {
 		c.JSON(http.StatusConflict, gin.H{"error": "An account with this email address already exists"})
 		return
 	}
@@ -114,7 +114,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 
-	_, err = h.mongo.Users.InsertOne(ctx, user)
+	err = h.store.CreateUser(ctx, &user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user record"})
 		return
@@ -145,14 +145,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	var user models.User
-	err := h.mongo.Users.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	user, err := h.store.GetUserByEmail(ctx, email)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database lookup failed"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
@@ -162,7 +157,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.generateToken(&user)
+	token, err := h.generateToken(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate authorization token"})
 		return
@@ -170,7 +165,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.AuthResponse{
 		Token: token,
-		User:  user,
+		User:  *user,
 	})
 }
 
@@ -182,17 +177,11 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		return
 	}
 
-	objID, err := primitive.ObjectIDFromHex(userIDHex.(string))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	var user models.User
-	if err := h.mongo.Users.FindOne(ctx, bson.M{"_id": objID}).Decode(&user); err != nil {
+	user, err := h.store.GetUserByID(ctx, userIDHex.(string))
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
