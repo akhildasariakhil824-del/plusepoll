@@ -1,0 +1,42 @@
+services:
+  # Go Backend Service
+  - type: web
+    name: pulsepoll-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: MONGO_URI
+        sync: false # Set in Render Dashboard: e.g. mongodb+srv://... (MongoDB Atlas Free M0)
+      - key: MONGO_DB
+        value: pulsepoll
+      - key: REDIS_URI
+        sync: false # Set in Render Dashboard: e.g. rediss://default:... (Upstash Redis or Redis Cloud Free)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: GIN_MODE
+        value: release
+
+  # React Frontend Static Site
+  - type: web
+    name: pulsepoll-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE
+        fromService:
+          type: web
+          name: pulsepoll-backend
+          property: host
