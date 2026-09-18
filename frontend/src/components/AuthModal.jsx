@@ -31,11 +31,16 @@ export const AuthModal = () => {
     }
   };
 
-  const handleDemoFill = () => {
-    setEmail('demo@pulsepoll.io');
-    setPassword('demopass123');
-    setName('Demo Presenter');
+  const handleInstantDemoLogin = async () => {
     setError('');
+    setLoading(true);
+    try {
+      await login('demo@pulsepoll.io', 'demopass123');
+    } catch (err) {
+      setError(err.message || 'Demo sign in failed.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -69,11 +74,11 @@ export const AuthModal = () => {
         {/* Demo Account Quick Fill Button */}
         <button
           type="button"
-          onClick={handleDemoFill}
-          className="w-full mb-5 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-semibold transition-colors"
+          onClick={handleInstantDemoLogin}
+          className="w-full mb-5 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 border border-blue-500/40 text-blue-300 text-xs font-bold transition-all shadow-sm active:scale-95"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Quick Fill Demo Credentials (demo@pulsepoll.io)</span>
+          <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
+          <span>⚡ 1-Click Demo Login (demo@pulsepoll.io)</span>
         </button>
 
         {error && (

@@ -89,8 +89,31 @@ export const usePollWebSocket = (pollId, onUpdate) => {
 
     connectWebSocket();
 
+    const handleDemoVote = (e) => {
+      if (e.detail) {
+        setLiveData(prev => {
+          const tot = e.detail.total_votes || prev.totalVotes;
+          const optVotes = e.detail.option_votes || prev.optionVotes;
+          const pct = {};
+          Object.keys(optVotes).forEach(k => {
+            pct[k] = tot > 0 ? (optVotes[k] / tot) * 100 : 0;
+          });
+          const updated = {
+            ...prev,
+            totalVotes: tot,
+            optionVotes: optVotes,
+            percentages: pct,
+          };
+          if (onUpdate) onUpdate(updated, 'vote_update');
+          return updated;
+        });
+      }
+    };
+    window.addEventListener('pulsepoll:demo_vote', handleDemoVote);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('pulsepoll:demo_vote', handleDemoVote);
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }

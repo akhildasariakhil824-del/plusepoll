@@ -24,9 +24,33 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(mongo *database.MongoDB, cfg *config.Config) *AuthHandler {
-	return &AuthHandler{
+	h := &AuthHandler{
 		mongo:  mongo,
 		config: cfg,
+	}
+	h.SeedDemoUser()
+	return h
+}
+
+// SeedDemoUser ensures the demo account exists in MongoDB for instant testing
+func (h *AuthHandler) SeedDemoUser() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	demoEmail := "demo@pulsepoll.io"
+	count, err := h.mongo.Users.CountDocuments(ctx, bson.M{"email": demoEmail})
+	if err == nil && count == 0 {
+		hashed, err := bcrypt.GenerateFromPassword([]byte("demopass123"), bcrypt.DefaultCost)
+		if err == nil {
+			demoUser := models.User{
+				ID:        primitive.NewObjectID(),
+				Name:      "Demo Presenter",
+				Email:     demoEmail,
+				Password:  string(hashed),
+				CreatedAt: time.Now(),
+			}
+			_, _ = h.mongo.Users.InsertOne(ctx, demoUser)
+		}
 	}
 }
 
