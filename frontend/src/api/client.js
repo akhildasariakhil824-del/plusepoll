@@ -142,6 +142,27 @@ export const api = {
   // Polls API
   polls: {
     create: async (pollData) => {
+      const token = localStorage.getItem('pulsepoll_jwt');
+      if (token === 'demo_jwt_token_local_mock') {
+        const polls = getDemoPolls();
+        const newPoll = {
+          id: 'demo_poll_' + Date.now(),
+          title: pollData.title,
+          description: pollData.description || '',
+          creator_name: 'Demo Presenter',
+          is_active: true,
+          total_votes: 0,
+          created_at: new Date().toISOString(),
+          options: pollData.options.map((optText, idx) => ({
+            index: idx,
+            text: optText,
+            votes: 0,
+          })),
+        };
+        polls.unshift(newPoll);
+        saveDemoPolls(polls);
+        return newPoll;
+      }
       try {
         const res = await fetch(`${API_BASE}/api/polls`, {
           method: 'POST',
@@ -172,13 +193,16 @@ export const api = {
       }
     },
     getMyPolls: async () => {
+      const token = localStorage.getItem('pulsepoll_jwt');
+      if (token === 'demo_jwt_token_local_mock') {
+        return getDemoPolls();
+      }
       try {
         const res = await fetch(`${API_BASE}/api/polls/my`, {
           headers: getHeaders(true),
         });
         return await handleResponse(res);
       } catch (err) {
-        // Fallback in demo mode
         return getDemoPolls();
       }
     },
