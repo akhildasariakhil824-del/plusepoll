@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 vendor/
+backend/.gocache/
+backend/.gopath/
 
 # Build outputs
 dist/
