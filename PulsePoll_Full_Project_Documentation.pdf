@@ -1,0 +1,259 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [8 0 R 10 0 R 12 0 R 14 0 R] /Count 4 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>
+endobj
+7 0 obj
+<< /Length 4460 >>
+stream
+0.05 0.08 0.15 rg 50 582 512 160 re f
+0.23 0.51 0.96 RG 3 w 50 582 m 562 582 l S
+1 1 1 rg BT /F2 26 Tf 74 697 Td (PulsePoll) Tj ET
+0.38 0.65 0.98 rg BT /F2 14 Tf 205 697 Td (NextGen Real-Time Live Polling Platform) Tj ET
+0.8 0.85 0.9 rg BT /F1 11 Tf 74 667 Td (Full-Stack Project Documentation, System Architecture & Submission Dossier) Tj ET
+0.02 0.71 0.83 rg BT /F2 9 Tf 74 640 Td (Tech Stack: React 18 | Go 1.22 \(Gin\) | Redis 7 \(Pub/Sub + Counters\) | MongoDB 6) Tj ET
+0.6 0.65 0.75 rg BT /F1 9 Tf 74 617 Td (Prepared for: HCL GUVI Developer Task | Submission: dev@hclguvi.com) Tj ET
+0.23 0.51 0.96 rg 50 535 4 18 re f
+0.1 0.15 0.25 rg BT /F2 14 Tf 60 537 Td (1. Project Overview & Problem Statement) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 515 Td (PulsePoll is a production-grade, real-time live polling platform built for high-concurrency) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 501 Td (audience interaction. A presenter creates a poll, distributes the link or QR code, and) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 487 Td (audience members cast their votes from their phones or browsers. Every connected presenter) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 473 Td (and audience member sees the percentage bars, vote counts, and winner highlights update) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 459 Td (instantaneously with zero page refreshes.) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 441 Td (The project strictly complies with the HCL GUVI Developer Task specifications, implementing) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 427 Td (complete separation of concerns between the React frontend and Go backend, server-side input) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 413 Td (validation, atomic Redis operations, and durable MongoDB storage.) Tj ET
+0.23 0.51 0.96 rg 50 378 4 18 re f
+0.1 0.15 0.25 rg BT /F2 14 Tf 60 380 Td (2. Required Tech Stack & Deep Architectural Decisions) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 358 Td (All four required layers are doing high-value architectural work rather than serving as) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 344 Td (boilerplate:) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 326 Td (- Frontend \(React 18 + Vite + Tailwind\): Next-generation glassmorphic dark theme,) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 313 Td (    real-time animated percentage bars, live viewer counter, celebratory confetti) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 300 Td (    animations, QR code generator, and Presenter mode.) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 285 Td (- Backend \(Go 1.22 + Gin\): High-performance compiled API gateway, Gorilla WebSockets with) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 272 Td (    auto-reconnection/heartbeat, Bcrypt password hashing, JWT token authorization, and) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 259 Td (    strict input validation.) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 244 Td (- Realtime Engine \(Redis 7\): Atomic HINCRBY prevents race conditions during concurrent) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 231 Td (    voting bursts; SADD set checks enforce duplicate vote prevention at O\(1\); Pub/Sub) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 218 Td (    broadcasts vote events across server instances; INCR/DECR tracks active audience) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 205 Td (    presence.) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 190 Td (- Persistence \(MongoDB 6\): Stores user accounts, poll definitions, option metadata, and an) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 177 Td (    immutable votes audit log with voter fingerprints, timestamps, IPs, and user-agents) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 164 Td (    for CSV export.) Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 141 Td (Real Work Done by Redis vs MongoDB \(Architectural Justification\)) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 125 Td (A common anti-pattern in live polling tools is writing every incoming vote directly to a) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 111 Td (disk-based document database. Under bursts of hundreds of concurrent votes, database write) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 97 Td (locks cause latency spikes and race conditions.) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 79 Td (In PulsePoll, Redis acts as the real-time shock absorber: Redis HINCRBY executes tallies) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 65 Td (in-memory within microseconds, SADD verifies voter uniqueness instantly, and Redis Pub/Sub) Tj ET
+0.5 0.55 0.6 rg
+BT
+/F1 8 Tf
+281.0 25 Td
+(Page 1 of 4) Tj
+ET
+0.85 0.88 0.92 RG 0.5 w 50 36 m 562 36 l S
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 4226 >>
+stream
+0.4 0.45 0.55 rg
+BT
+/F1 8 Tf
+50 757 Td
+(PulsePoll -- NextGen Live Polling Platform | HCL GUVI Submission) Tj
+ET
+0.85 0.88 0.92 RG 0.5 w 50 754 m 562 754 l S
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 742 Td (fans out the updated tally across all connected WebSockets. MongoDB persistence is handled) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 728 Td (asynchronously in a background goroutine for audit logging, ensuring the voter never) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 714 Td (experiences latency.) Tj ET
+0.23 0.51 0.96 rg 50 679 4 18 re f
+0.1 0.15 0.25 rg BT /F2 14 Tf 60 681 Td (3. How to Run the Project Locally) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 659 Td (You can run PulsePoll locally either with Docker Compose \(single command\) or directly on) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 645 Td (macOS:) Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 619 Td (Option A: 1-Click Docker Compose \(Recommended\)) Tj ET
+0.94 0.96 0.98 rg 50 515 512 88 re f
+0.8 0.85 0.9 RG 0.5 w 50 515 512 88 re S
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 591 Td (# Navigate to project root and launch all 4 services:) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 579 Td (cd /Users/akhil/.gemini/antigravity/scratch/pulsepoll) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 567 Td (docker compose up --build) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 555 Td () Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 543 Td (# Access points:) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 531 Td (Frontend UI: http://localhost:3000  |  Go Backend API: http://localhost:8080) Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 497 Td (Option B: Native macOS Execution) Tj ET
+0.94 0.96 0.98 rg 50 345 512 136 re f
+0.8 0.85 0.9 RG 0.5 w 50 345 512 136 re S
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 469 Td (# 1. Start Redis \(Port 6379\):) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 457 Td (brew services start redis) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 445 Td () Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 433 Td (# 2. Start Go Backend \(Port 8080\) in Terminal 1:) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 421 Td (cd /Users/akhil/.gemini/antigravity/scratch/pulsepoll/backend) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 409 Td (go run main.go) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 397 Td () Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 385 Td (# 3. Start React Frontend \(Port 5173\) in Terminal 2:) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 373 Td (cd /Users/akhil/.gemini/antigravity/scratch/pulsepoll/frontend) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 361 Td (npm run dev) Tj ET
+0.23 0.51 0.96 rg 50 318 4 18 re f
+0.1 0.15 0.25 rg BT /F2 14 Tf 60 320 Td (4. Generating the Live Public Host Link) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 298 Td (The specification states: 'Actually deployed. Ship it to a live, working link, not just) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 284 Td (localhost.' You have two simple options:) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 266 Td (- Instant Public Live Link \(Tunneling\): Run 'npx localtunnel --port 3000' or 'cloudflared) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 253 Td (    tunnel --url http://localhost:3000' while running locally to obtain a publicly) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 240 Td (    reachable HTTPS URL accessible from any phone or browser worldwide.) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 225 Td (- Permanent Cloud Deployment \(Render\): Push this repository to GitHub, link it on) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 212 Td (    Render.com using the included render.yaml blueprint, and plug in free-tier MongoDB) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 199 Td (    Atlas and Upstash Redis URIs.) Tj ET
+0.23 0.51 0.96 rg 50 167 4 18 re f
+0.1 0.15 0.25 rg BT /F2 14 Tf 60 169 Td (5. Mandatory 3-5 Minute Submission Video Script) Tj ET
+1.0 0.96 0.92 rg 50 111 512 36 re f
+0.95 0.6 0.15 RG 1.5 w 50 111 512 36 re S
+0.1 0.2 0.35 rg BT /F2 8.5 Tf 60 133 Td ([IMPORTANT] Recording the 3-5 minute video is mandatory per task instructions. Email to dev@) Tj ET
+0.2 0.25 0.35 rg BT /F1 8.5 Tf 60 121 Td (hclguvi.com.) Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 93 Td (Section 1: Live Demo \(1.5 Minutes\)) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 77 Td (Walk through the user journey: Log in using the 1-Click Demo Login button) Tj ET
+0.5 0.55 0.6 rg
+BT
+/F1 8 Tf
+281.0 25 Td
+(Page 2 of 4) Tj
+ET
+0.85 0.88 0.92 RG 0.5 w 50 36 m 562 36 l S
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Length 5020 >>
+stream
+0.4 0.45 0.55 rg
+BT
+/F1 8 Tf
+50 757 Td
+(PulsePoll -- NextGen Live Polling Platform | HCL GUVI Submission) Tj
+ET
+0.85 0.88 0.92 RG 0.5 w 50 754 m 562 754 l S
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 742 Td (\(demo@pulsepoll.io\). Create a new poll with 3-4 options. Open the poll link in two) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 728 Td (side-by-side browser windows. Cast a vote in Window A and show Window B updating) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 714 Td (instantaneously with smooth animated bars and confetti. Show the QR code modal and CSV) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 700 Td (export.) Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 674 Td (Section 2: The Challenge That Gave the Most Trouble \(1.5 Minutes\)) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 658 Td (Script recommendation: 'The biggest architectural challenge was handling high-frequency) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 644 Td (concurrent voting without write-lock contention or race conditions. If multiple voters) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 630 Td (submit votes in the same millisecond, traditional database read-modify-write patterns suffer) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 616 Td (from collisions. We solved this by decoupling the real-time counting from database) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 602 Td (persistence: Redis atomic HINCRBY tallies votes in sub-milliseconds, SADD checks duplicate) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 588 Td (voters at O\(1\), and Redis Pub/Sub pushes updates across WebSockets. MongoDB persistence is) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 574 Td (handled asynchronously in background goroutines.') Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 548 Td (Section 3: How AI Tools Were Used \(1 Minute\)) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 532 Td (Script recommendation: 'Yes, I utilized AI coding assistance \(Antigravity with Gemini\)) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 518 Td (during development. The AI was particularly valuable for rapid scaffolding of Go Gin) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 504 Td (handlers, crafting the Tailwind glassmorphic styling system, and generating Docker) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 490 Td (orchestration files. However, the core distributed architecture--designing the atomic Redis) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 476 Td (data structures, implementing the WebSocket hub lifecycle with viewer presence counting, and) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 462 Td (building the zero-crash DataStore fallback--required careful human validation and) Tj ET
+0.2 0.25 0.3 rg BT /F1 9.5 Tf 50 448 Td (architectural rigor.') Tj ET
+0.23 0.51 0.96 rg 50 413 4 18 re f
+0.1 0.15 0.25 rg BT /F2 14 Tf 60 415 Td (6. Key Source Code Highlights) Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 385 Td (Atomic Redis Engine \(backend/database/redis.go\)) Tj ET
+0.94 0.96 0.98 rg 50 281 512 88 re f
+0.8 0.85 0.9 RG 0.5 w 50 281 512 88 re S
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 357 Td (func \(r *RedisService\) IncrementVote\(ctx context.Context, pollID string, optionIndex int\) \(int64, error\) {) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 345 Td (    return r.Client.HIncrBy\(ctx, fmt.Sprintf\("poll:%s:votes", pollID\), strconv.Itoa\(optionIndex\), 1\).Result\(\)) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 333 Td (}) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 321 Td (func \(r *RedisService\) RecordVoter\(ctx context.Context, pollID, voterID string\) error {) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 309 Td (    return r.Client.SAdd\(ctx, fmt.Sprintf\("poll:%s:voters", pollID\), voterID\).Err\(\)) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 297 Td (}) Tj ET
+0.2 0.3 0.45 rg BT /F2 11 Tf 50 263 Td (WebSocket Hub & Redis Pub/Sub Relay \(backend/websocket/hub.go\)) Tj ET
+0.94 0.96 0.98 rg 50 147 512 100 re f
+0.8 0.85 0.9 RG 0.5 w 50 147 512 100 re S
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 235 Td (pubsub := redis.Client.Subscribe\(ctx, redis.PubSubChannel\(pollIDHex\)\)) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 223 Td (defer pubsub.Close\(\)) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 211 Td (for redisMsg := range pubsub.Channel\(\) {) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 199 Td (    var payload models.WebSocketMessage) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 187 Td (    json.Unmarshal\([]byte\(redisMsg.Payload\), &payload\)) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 175 Td (    conn.WriteJSON\(payload\) // Stream live updates to browser without refresh) Tj ET
+0.15 0.2 0.3 rg BT /F3 8 Tf 62 163 Td (}) Tj ET
+0.23 0.51 0.96 rg 50 120 4 18 re f
+0.1 0.15 0.25 rg BT /F2 14 Tf 60 122 Td (7. Submission Checklist for HCL GUVI) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 100 Td (- 1. Public GitHub Repository Link: Full source code, git history, separation of concerns) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 87 Td (    \(/frontend, /backend\), README.md.) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 72 Td (- 2. Working Live Deployed Link: Publicly reachable link generated via Render, Railway, or) Tj ET
+0.5 0.55 0.6 rg
+BT
+/F1 8 Tf
+281.0 25 Td
+(Page 3 of 4) Tj
+ET
+0.85 0.88 0.92 RG 0.5 w 50 36 m 562 36 l S
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 11 0 R >>
+endobj
+13 0 obj
+<< /Length 664 >>
+stream
+0.4 0.45 0.55 rg
+BT
+/F1 8 Tf
+50 757 Td
+(PulsePoll -- NextGen Live Polling Platform | HCL GUVI Submission) Tj
+ET
+0.85 0.88 0.92 RG 0.5 w 50 754 m 562 754 l S
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 742 Td (    Cloudflare/localtunnel.) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 727 Td (- 3. Short Video \(3-5 min\): Unlisted YouTube or Google Drive link answering the) Tj ET
+0.15 0.2 0.25 rg BT /F1 9 Tf 58 714 Td (    concurrency challenge and AI tool usage.) Tj ET
+0.15 0.2 0.25 rg BT /F2 9 Tf 58 699 Td (- 4. Email Destination: Send all 3 links to: dev@hclguvi.com.) Tj ET
+0.5 0.55 0.6 rg
+BT
+/F1 8 Tf
+281.0 25 Td
+(Page 4 of 4) Tj
+ET
+0.85 0.88 0.92 RG 0.5 w 50 36 m 562 36 l S
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 13 0 R >>
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000136 00000 n 
+0000000206 00000 n 
+0000000281 00000 n 
+0000000349 00000 n 
+0000000422 00000 n 
+0000004934 00000 n 
+0000005090 00000 n 
+0000009368 00000 n 
+0000009525 00000 n 
+0000014598 00000 n 
+0000014756 00000 n 
+0000015472 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R >>
+startxref
+15630
+%%EOF
