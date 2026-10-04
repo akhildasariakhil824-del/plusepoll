@@ -39,9 +39,10 @@ func main() {
 	log.Printf("Connecting to Redis at: %s", cfg.RedisURI)
 	redisService, err := database.InitRedis(cfg.RedisURI)
 	if err != nil {
-		log.Fatalf("Fatal: Failed to connect to Redis at %s: %v", cfg.RedisURI, err)
+		log.Printf("⚠️ Redis server not reached (%v). Running with High-Performance In-Memory Pub/Sub & Atomic Engine fallback!", err)
+		redisService = database.NewMemoryRedisService()
 	}
-	defer redisService.Client.Close()
+	defer redisService.Close()
 
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
@@ -55,14 +56,14 @@ func main() {
 	{
 		// Health Check
 		api.GET("/health", func(c *gin.Context) {
-			redisErr := redisService.Client.Ping(c.Request.Context()).Err()
 			c.JSON(http.StatusOK, gin.H{
 				"status":  "healthy",
 				"service": "PulsePoll Realtime Backend",
 				"time":    time.Now().UTC(),
 				"checks": gin.H{
-					"redis":   redisErr == nil,
-					"storage": store.IsConnected(),
+					"redis":         redisService.IsRealRedis(),
+					"realtime_mode": func() string { if redisService.IsRealRedis() { return "Redis Pub/Sub + Atomic Counters" } else { return "In-Memory Engine (Start Redis for multi-instance cluster)" } }(),
+					"storage":       store.IsConnected(),
 				},
 			})
 		})
@@ -76,6 +77,7 @@ func main() {
 		}
 
 		// Public Poll Routes & Voting
+		api.GET("/polls", pollHandler.ListPublicPolls)
 		api.GET("/polls/:id", pollHandler.GetPoll)
 		api.POST("/polls/:id/vote", pollHandler.SubmitVote)
 		api.GET("/polls/:id/export", pollHandler.ExportPollResults)

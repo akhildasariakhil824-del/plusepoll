@@ -27,6 +27,7 @@ type DataStore interface {
 	CreatePoll(ctx context.Context, poll *models.Poll) error
 	GetPollByID(ctx context.Context, id string) (*models.Poll, error)
 	GetPollsByCreator(ctx context.Context, creatorID string) ([]models.Poll, error)
+	ListActivePolls(ctx context.Context, limit int) ([]models.Poll, error)
 	UpdatePollStatus(ctx context.Context, id string, creatorID string, isActive bool) error
 	IncrementPollVotes(ctx context.Context, id string, optionIndex int) error
 	DeletePoll(ctx context.Context, id string, creatorID string) error
@@ -145,6 +146,24 @@ func (m *MongoStore) GetPollsByCreator(ctx context.Context, creatorID string) ([
 	}
 	findOpts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
 	cursor, err := m.Polls.Find(ctx, bson.M{"creator_id": cID}, findOpts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var polls []models.Poll
+	if err := cursor.All(ctx, &polls); err != nil {
+		return nil, err
+	}
+	return polls, nil
+}
+
+func (m *MongoStore) ListActivePolls(ctx context.Context, limit int) ([]models.Poll, error) {
+	findOpts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
+	if limit > 0 {
+		findOpts.SetLimit(int64(limit))
+	}
+	cursor, err := m.Polls.Find(ctx, bson.M{"is_active": true}, findOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -323,6 +342,29 @@ func (s *MemoryStore) GetPollsByCreator(ctx context.Context, creatorID string) (
 		if p.CreatorID.Hex() == creatorID {
 			list = append(list, *p)
 		}
+	}
+	return list, nil
+}
+
+func (s *MemoryStore) ListActivePolls(ctx context.Context, limit int) ([]models.Poll, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var list []models.Poll
+	for _, p := range s.polls {
+		if p.IsActive {
+			list = append(list, *p)
+		}
+	}
+	// Sort newest first
+	for i := 0; i < len(list)-1; i++ {
+		for j := i + 1; j < len(list); j++ {
+			if list[i].CreatedAt.Before(list[j].CreatedAt) {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+	}
+	if limit > 0 && len(list) > limit {
+		list = list[:limit]
 	}
 	return list, nil
 }

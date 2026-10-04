@@ -23,9 +23,42 @@ type PollHandler struct {
 }
 
 func NewPollHandler(store database.DataStore, redis *database.RedisService) *PollHandler {
-	return &PollHandler{
+	h := &PollHandler{
 		store: store,
 		redis: redis,
+	}
+	h.SeedDemoPoll()
+	return h
+}
+
+// SeedDemoPoll seeds an initial live poll if no polls exist
+func (h *PollHandler) SeedDemoPoll() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	polls, err := h.store.ListActivePolls(ctx, 1)
+	if err == nil && len(polls) == 0 {
+		creatorID := primitive.NewObjectID()
+		pollID := primitive.NewObjectID()
+		demoPoll := models.Poll{
+			ID:          pollID,
+			Title:       "Which backend stack do you prefer for real-time applications?",
+			Description: "GUVI HCL Live Polling Interactive Demo & Benchmark",
+			Options: []models.PollOption{
+				{Index: 0, Text: "Go (Gin) + Redis (Atomic Counters & Pub/Sub)", Votes: 0},
+				{Index: 1, Text: "Node.js (Express) + Socket.io", Votes: 0},
+				{Index: 2, Text: "Python (FastAPI) + Redis Streams", Votes: 0},
+				{Index: 3, Text: "Rust (Actix-web) + Redis", Votes: 0},
+			},
+			CreatorID:   creatorID,
+			CreatorName: "Demo Presenter",
+			IsActive:    true,
+			TotalVotes:  0,
+			CreatedAt:   time.Now(),
+		}
+		_ = h.store.CreatePoll(ctx, &demoPoll)
+		_ = h.redis.InitializePollVotes(ctx, pollID.Hex(), 4)
+		log.Printf("✔ Seeded demo live poll (ID: %s)", pollID.Hex())
 	}
 }
 
@@ -117,6 +150,42 @@ func (h *PollHandler) ListMyPolls(c *gin.Context) {
 	}
 
 	// Enrich each poll with live Redis vote numbers and active viewer counts
+	type EnrichedPoll struct {
+		models.Poll
+		LiveViewers int64 `json:"live_viewers"`
+	}
+
+	enriched := make([]EnrichedPoll, 0, len(polls))
+	for _, p := range polls {
+		pollHex := p.ID.Hex()
+		votesMap, total, err := h.redis.GetVotes(ctx, pollHex, len(p.Options))
+		if err == nil && total > 0 {
+			p.TotalVotes = total
+			for i := range p.Options {
+				p.Options[i].Votes = votesMap[p.Options[i].Index]
+			}
+		}
+		viewers, _ := h.redis.GetViewers(ctx, pollHex)
+		enriched = append(enriched, EnrichedPoll{
+			Poll:        p,
+			LiveViewers: viewers,
+		})
+	}
+
+	c.JSON(http.StatusOK, enriched)
+}
+
+// ListPublicPolls retrieves all active polls for public discovery and CLI
+func (h *PollHandler) ListPublicPolls(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	polls, err := h.store.ListActivePolls(ctx, 50)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query active polls"})
+		return
+	}
+
 	type EnrichedPoll struct {
 		models.Poll
 		LiveViewers int64 `json:"live_viewers"`

@@ -14,6 +14,7 @@ Built for the **HCL GUVI Developer Task**.
 
 ## 🌟 Key Highlights & Extra Features
 
+- **🖥️ Direct Terminal Runner & Interactive CLI Suite**: Run the entire stack with a single terminal command (`./pulsepoll start` or `./run.sh`). Includes a standalone **Terminal Live Stream Monitor** (`./pulsepoll watch <id>`) that renders real-time updating ASCII bar charts over WebSockets, plus an interactive poll creator, voter, and concurrent traffic simulator.
 - **Sub-millisecond Real-Time Synchronization**: Backed by **Redis Pub/Sub** and **Gorilla WebSockets** with automatic reconnection and heartbeat keep-alive.
 - **Race-Condition-Free Voting**: Uses Redis atomic `HINCRBY` operations for instant counter increments without database lock contention.
 - **Duplicate Vote Prevention**: Redis `SADD` set membership checks enforce one vote per device/voter identity at \(O(1)\) time complexity.
@@ -80,17 +81,69 @@ A common anti-pattern is using Redis only as a key-value passthrough or using Mo
 ## 🚀 Quick Start & Local Run
 
 ### Prerequisites
-- [Docker](https://www.docker.com/) & Docker Compose (Recommended)
-- *Or* Go 1.22+, Node.js 18+, MongoDB, and Redis installed locally.
+- Go 1.22+ and Node.js 18+ *(or Docker & Docker Compose)*
+- Redis *(optional, automatically started or falls back to in-memory engine)*
+- MongoDB *(optional, falls back to in-memory store)*
 
-### Option A: 1-Click Run with Docker Compose (Recommended)
+---
 
-Clone the repository and run:
+### ⚡ Method 1: Direct Run Through Terminal (Zero Setup)
+
+Simply run the master executable in the project root:
+
 ```bash
-docker compose up --build
+./pulsepoll start
+# OR using the alias:
+./run.sh
+# OR using make:
+make start
 ```
 
-That's it! Services will boot up automatically:
+This single command:
+1. Performs automatic environment & dependency checks.
+2. Connects to or launches local Redis (or activates the zero-crash fallback engine).
+3. Connects to MongoDB (or activates the in-memory persistence fallback).
+4. Boots the **Go (Gin) Backend** on `http://localhost:8080`.
+5. Boots the **React (Vite) Frontend** on `http://localhost:5173`.
+6. Seeds an initial demo poll and demo account (`demo@pulsepoll.io` / `demopass123`) so you can test instantly.
+
+---
+
+### 💻 Method 2: The Interactive Terminal Suite
+
+You can interact with live polls directly inside your terminal window:
+
+```bash
+# Launch interactive terminal UI (browse, create, vote, watch)
+./pulsepoll cli
+
+# List all active polls in terminal
+./pulsepoll list
+
+# Interactively create a poll from terminal
+./pulsepoll create
+
+# Cast a vote from terminal
+./pulsepoll vote <poll-id>
+
+# ⚡ LIVE STREAM: Watch real-time updating ASCII bar chart over WebSockets/Redis
+./pulsepoll watch <poll-id>
+
+# 🚀 SIMULATE: Fire 100 concurrent votes to test Redis atomic throughput
+./pulsepoll simulate <poll-id> 100
+```
+
+---
+
+### Method 3: 1-Click Run with Docker Compose
+
+If you prefer multi-container Docker:
+
+```bash
+./pulsepoll docker
+# OR: docker compose up --build
+```
+Services boot automatically:
 - **Frontend App**: [http://localhost:3000](http://localhost:3000)
 - **Backend API**: [http://localhost:8080](http://localhost:8080)
 - **Health Check**: [http://localhost:8080/api/health](http://localhost:8080/api/health)

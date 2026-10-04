@@ -97,10 +97,12 @@ func HandleWebSocket(c *gin.Context, store database.DataStore, redis *database.R
 	}
 
 	// 5. Subscribe to Redis Pub/Sub channel for this poll
-	pubsub := redis.Client.Subscribe(context.Background(), redis.PubSubChannel(pollIDHex))
-	defer pubsub.Close()
-
-	ch := pubsub.Channel()
+	ch, unsub, err := redis.Subscribe(context.Background(), pollIDHex)
+	if err != nil {
+		log.Printf("Redis subscription failed: %v", err)
+		return
+	}
+	defer unsub()
 
 	// Goroutine to read client messages (pings/heartbeats) and detect disconnects
 	done := make(chan struct{})
@@ -128,13 +130,13 @@ func HandleWebSocket(c *gin.Context, store database.DataStore, redis *database.R
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
-		case redisMsg, ok := <-ch:
+		case payloadStr, ok := <-ch:
 			if !ok {
 				return
 			}
 
 			var payload models.WebSocketMessage
-			if err := json.Unmarshal([]byte(redisMsg.Payload), &payload); err != nil {
+			if err := json.Unmarshal([]byte(payloadStr), &payload); err != nil {
 				continue
 			}
 

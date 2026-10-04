@@ -7,6 +7,10 @@ dist/
 build/
 bin/
 server
+pulsepoll-server
+pulsepoll-cli
+backend/pulsepoll-server
+backend/pulsepoll-cli
 
 # Environment & local files
 .env
