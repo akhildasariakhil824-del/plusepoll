@@ -18,6 +18,7 @@ backend/pulsepoll-cli
 .env
 .env.local
 *.log
+*.zip
 
 # OS files
 .DS_Store
