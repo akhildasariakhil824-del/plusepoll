@@ -21,12 +21,12 @@ if [ -z "$TOKEN" ]; then
     exit 1
 fi
 
-echo "Configuring repository origin..."
-git remote set-url origin "https://${TOKEN}@github.com/akhildasariakhil824-del/pulsepoll.git"
+echo "Configuring repository origin to 'plusepoll'..."
+git remote set-url origin "https://${TOKEN}@github.com/akhildasariakhil824-del/plusepoll.git"
 
 echo "Pushing branch 'main' to GitHub..."
 git push -u origin main
 
 echo ""
 echo "🎉 SUCCESS! Your repository is now live at:"
-echo "👉 https://github.com/akhildasariakhil824-del/pulsepoll"
+echo "👉 https://github.com/akhildasariakhil824-del/plusepoll"
